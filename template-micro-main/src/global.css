@@ -1,0 +1,29 @@
+/**
+ * The global.css defines the style of the entire project,
+ * ice.js will globally import this file by default.
+ */
+:root {
+  --primary: #3178f6;
+  --bg-primary: white;
+}
+
+body {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.ant-table-cell {
+  overflow-wrap: anywhere !important;
+}
+
+a:visited {
+  text-decoration: unset;
+}
+.ant-layout {
+  flex-shrink: 0;
+  height: auto;
+  overflow: visible;
+}

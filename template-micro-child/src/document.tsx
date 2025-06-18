@@ -1,0 +1,32 @@
+/**
+ * The page's HTML template structure, using JSX.
+ */
+import { Meta, Title, Links, Main, Scripts } from 'ice';
+import { description } from '../package.json';
+
+export default function Document() {
+  return (
+    <html>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="description" content={description} />
+        <link
+          rel="icon"
+          href={`https://website-name${process.env.PUB_ENV === 'daily' ? '-daily' : ''}.oss-cn-shanghai.aliyuncs.com/website-name-static/img/logo.png`}
+        />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        <script src="//at.alicdn.com/t/c/font_4676815_yz3pvbfk5ub.js" />
+        <Meta />
+        <Title />
+        <Links />
+      </head>
+      <body>
+        <Main />
+        <Scripts />
+      </body>
+    </html>
+  );
+}

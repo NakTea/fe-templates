@@ -1,0 +1,51 @@
+.header {
+  height: 60px;
+  width: 100%;
+  padding: 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: @color-white;
+  font-size: 14px;
+  position: fixed;
+  top: 0;
+  z-index: 8;
+
+  .left {
+    display: flex;
+    align-items: center;
+    .logoName {
+      padding-left: 4px;
+    }
+  }
+  .nav {
+    :global {
+      a {
+        padding: 0 15px;
+      }
+    }
+  }
+  .right {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row-reverse;
+  }
+  .navMobile {
+    display: none;
+    margin-left: 12px;
+  }
+  .locale {
+    cursor: pointer;
+  }
+
+  // 响应式调整
+  @media (max-width: 768px) {
+    .nav {
+      display: none;
+    }
+    .navMobile {
+      display: block;
+    }
+  }
+}
