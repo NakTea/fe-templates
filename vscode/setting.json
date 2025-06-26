@@ -1,0 +1,103 @@
+{
+  "vetur.format.defaultFormatterOptions": {
+    "prettier": {
+      "semi": true,
+      "printWidth": 100,
+      "trailingComma": "all",
+      "singleQuote": true
+    }
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "stylelint.validate": [
+    "css",
+    "less",
+    "postcss",
+    "scss"
+  ],
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.formatOnSave": true,
+  "javascript.format.enable": false,
+  "editor.tabSize": 2,
+  "files.associations": {
+    "*.axml": "xml",
+    "*.tsx": "typescriptreact"
+  },
+  "emmet.triggerExpansionOnTab": true,
+  "emmet.includeLanguages": {
+    "axml": "html"
+  },
+  "terminal.integrated.tabs.enabled": true,
+  "editor.detectIndentation": false,
+  "eslint.codeAction.disableRuleComment": {},
+  "eslint.codeAction.showDocumentation": {
+    "enable": true
+  },
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescriptreact",
+    "javascriptreact",
+    "html",
+    "vue"
+  ],
+  "diffEditor.ignoreTrimWhitespace": true,
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "git.confirmSync": false,
+  "editor.formatOnType": true,
+  "eslint.options": {},
+  "prettier.jsxSingleQuote": true,
+  "prettier.printWidth": 120,
+  "prettier.singleQuote": true,
+  "prettier.useEditorConfig": false,
+  "git.autofetch": true,
+  "editor.accessibilitySupport": "off",
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "git.openRepositoryInParentFolders": "never",
+  "diffEditor.hideUnchangedRegions.enabled": true,
+  "prettier.requireConfig": true,
+  "chat.commandCenter.enabled": false,
+  "settingsSync.ignoredExtensions": [],
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "kotlin.languageServer.enabled": false,
+  "kotlin.debugAdapter.enabled": false,
+  "Lingma.localMachineModel": true,
+  "gitlens.defaultDateFormat": "",
+  "[less]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "gitlens.defaultDateLocale": "",
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "editor.minimap.renderCharacters": false,
+  "prettier.endOfLine": "crlf",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "debug.javascript.defaultRuntimeExecutable": {
+    "pwa-node": "node"
+  },
+  "terminal.integrated.defaultProfile.linux": ""
+}
