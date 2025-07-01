@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>方案九：主次焦点式推荐 (智能裁切版)</title>
+    <style>
+        /* 导入外部字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+
+        /* 设计系统 Tokens */
+        :root {
+            --background: #000F2C;
+            --containerPrimary: rgba(0, 0, 0, 0.4);
+            --textPrimary: #FFFFFF;
+            --textSecondary: #D1D0D2;
+            --radiusCard: 20px;
+            --radiusIncard: 10px;
+            --spaceCardPadding: 20px;
+            --spaceElementsM: 16px;
+            --spaceElementsXs: 8px;
+            --spaceElementsL: 20px;
+        }
+
+        /* 预设字体样式 */
+        .cnHeadlineSStrong { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.4; }
+        .cnBodyM { font-family: 'Noto Sans SC', sans-serif; font-size: 14px; font-weight: 400; line-height: 1.6; }
+        
+        /* 页面主体样式 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: url('https://hojo-website-daily.oss-cn-shanghai.aliyuncs.com/hojo-design/BG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 120px;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        /* 焦点卡片样式 */
+        .focus-card {
+            width: 100%;
+            min-width: 294px;
+            max-width: 430px;
+            max-height: 445px;
+            overflow: hidden;
+            background-color: var(--containerPrimary);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radiusCard);
+            padding: var(--spaceCardPadding);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spaceElementsL);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        /* 主推荐区域 */
+        .primary-feature {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spaceElementsM);
+        }
+        .primary-poster {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            /* 默认裁剪焦点，在JS加载失败或未检测到人脸时生效 */
+            object-position: center top;
+            border-radius: var(--radiusIncard);
+            /* 添加过渡效果，使焦点变化更平滑 */
+            transition: object-position 0.5s ease;
+        }
+        .primary-details {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spaceElementsXs);
+        }
+        .primary-title { margin: 0; color: var(--textPrimary); }
+        .primary-paragraph { margin: 0; color: var(--textSecondary); }
+
+        /* 次要推荐区域 */
+        .secondary-features {
+            display: flex;
+            gap: var(--spaceElementsM);
+        }
+        .secondary-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spaceElementsXs);
+            min-width: 0;
+        }
+        .secondary-poster {
+            width: 100%;
+            height: 85px;
+            object-fit: cover;
+            /* 默认裁剪焦点 */
+            object-position: center top;
+            border-radius: var(--radiusIncard);
+            transition: object-position 0.5s ease;
+        }
+        .secondary-title {
+            margin: 0;
+            color: var(--textPrimary);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <div class="focus-card">
+        <!-- 主推荐 -->
+        <div class="primary-feature">
+            <!-- 更新：添加 crossorigin="anonymous" 以允许JS处理跨域图片 -->
+            <img class="primary-poster poster-to-scan" src="https://p.sda1.dev/24/723437f9cc94f8a60a66cbca7dc244da/v2-a54636ca61020eecb35e4ba1f4298f2d_1440w.jpg" crossorigin="anonymous" alt="[电影《星际远航》海报]">
+            <div class="primary-details">
+                <h2 class="cnHeadlineSStrong primary-title">今日主打：星际远航</h2>
+                <p class="cnBodyM primary-paragraph">在广袤的宇宙中，人类的未来悬于一线。这部史诗级科幻巨作将带您体验一场前所未有的星际穿越，探索人性的光辉与坚韧。</p>
+            </div>
+        </div>
+        <!-- 次要推荐 -->
+        <div class="secondary-features">
+            <div class="secondary-card">
+                <img class="secondary-poster poster-to-scan" src="https://p.sda1.dev/24/ce0d9417fa0d43d4ebc9410eb802849b/v2-367476b8b2ce6c7676417f8aee3fe735_1440w.jpg" crossorigin="anonymous" alt="[电影《寂静的真相》海报]">
+                <h3 class="cnBodyM secondary-title">寂静的真相</h3>
+            </div>
+            <div class="secondary-card">
+                <img class="secondary-poster poster-to-scan" src="https://p.sda1.dev/24/c926a02e1d07f1ddd097dd076d1d62cd/v2-56abaa3a31addf32954b5ce8cd8512e6_1440w.jpg" crossorigin="anonymous" alt="[电影《沙丘》海报]">
+                <h3 class="cnBodyM secondary-title">沙丘</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入 face-api.js 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <!-- 智能裁剪脚本 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 更新：使用更稳定的CDN URL加载模型
+            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+            const imagesToProcess = document.querySelectorAll('.poster-to-scan');
+
+            // 异步加载人脸识别模型
+            async function loadModels() {
+                try {
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                    console.log("人脸识别模型加载成功！");
+                    return true;
+                } catch (error) {
+                    console.error("加载人脸识别模型失败:", error);
+                    return false;
+                }
+            }
+
+            // 分析单张图片并调整其焦点
+            async function adjustImageFocus(imgElement) {
+                if (!imgElement.complete) {
+                    await new Promise(resolve => { imgElement.onload = resolve; });
+                }
+
+                const detections = await faceapi.detectAllFaces(imgElement, new faceapi.TinyFaceDetectorOptions());
+
+                if (detections.length > 0) {
+                    // 更新：如果有多个人脸，找到面积最大的那个作为主角
+                    const mainFace = detections.sort((a, b) => b.box.area - a.box.area)[0];
+                    
+                    // 更新：计算新的垂直焦点，确保额头和眉毛完整显示
+                    // 我们将裁剪框的中心对准人脸框从上往下 40% 的位置
+                    const focusPointY = mainFace.box.y + mainFace.box.height * 0.4;
+                    
+                    // 将焦点的y坐标转换为百分比
+                    const yFocusPercent = (focusPointY / imgElement.naturalHeight) * 100;
+
+                    console.log(`在图片 ${imgElement.alt} 中聚焦最大人脸，设置垂直焦点为 ${yFocusPercent.toFixed(2)}%`);
+                    
+                    // 动态设置 object-position
+                    imgElement.style.objectPosition = `50% ${yFocusPercent}%`;
+                } else {
+                    console.log(`在图片 ${imgElement.alt} 中未检测到人脸，使用默认焦点。`);
+                }
+            }
+
+            // 主执行函数
+            async function runFaceDetection() {
+                const modelsLoaded = await loadModels();
+                if (modelsLoaded) {
+                    imagesToProcess.forEach(img => {
+                        adjustImageFocus(img).catch(error => {
+                            console.error(`处理图片 ${img.alt} 时出错:`, error);
+                        });
+                    });
+                }
+            }
+
+            runFaceDetection();
+        });
+    </script>
+</body>
+</html>
