@@ -2,6 +2,7 @@
 
 const ThemeReplacer = require('./themeReplacer');
 const themeMapping = require('./themeMapping');
+const themeMappingLight = require('./themeMappingLight');
 const path = require('path');
 
 // 解析命令行参数
@@ -9,12 +10,20 @@ const args = process.argv.slice(2);
 const options = {};
 const files = [];
 
+const themes = {
+  light: themeMappingLight,
+  dark: themeMapping,
+};
+
 for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     switch (arg) {
         case '--output':
         case '-o':
             options.output = args[++i];
+            break;
+        case '-theme':
+            options.theme = args[++i];
             break;
         case '--preview':
         case '-p':
@@ -61,6 +70,8 @@ function showHelp() {
   node cli.js -p input.html                      # 预览替换结果
   node cli.js -d ./src -o ./dist                 # 处理整个目录
   node cli.js -d ./src -e .html,.css,.scss       # 处理目录中的特定文件类型
+  node cli.js -d ./source -o ./target -theme light # 替换html的白天主题
+  node cli.js -d ./source -o ./target -theme dark # 替换html的夜间主题
     `);
 }
 
@@ -72,7 +83,7 @@ function main() {
         process.exit(1);
     }
 
-    const replacer = new ThemeReplacer(themeMapping);
+    const replacer = new ThemeReplacer(themes?.[options.theme || 'dark']);
 
     // 验证映射配置
     if (!replacer.validateMapping()) {
