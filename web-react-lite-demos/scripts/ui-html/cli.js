@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const ThemeReplacer = require('./themeReplacer');
-const themeMapping = require('./themeMapping');
+const themeMappingDark = require('./themeMappingDark');
 const themeMappingLight = require('./themeMappingLight');
 const path = require('path');
 
@@ -12,7 +12,7 @@ const files = [];
 
 const themes = {
   light: themeMappingLight,
-  dark: themeMapping,
+  dark: themeMappingDark,
 };
 
 for (let i = 0; i < args.length; i++) {
@@ -70,8 +70,8 @@ function showHelp() {
   node cli.js -p input.html                      # 预览替换结果
   node cli.js -d ./src -o ./dist                 # 处理整个目录
   node cli.js -d ./src -e .html,.css,.scss       # 处理目录中的特定文件类型
-  node cli.js -d ./source -o ./target -theme light # 替换html的白天主题
-  node cli.js -d ./source -o ./target -theme dark # 替换html的夜间主题
+  node cli.js -d ./source -o ./target-light -theme light # 替换html的白天主题
+  node cli.js -d ./source -o ./target-dark -theme dark # 替换html的夜间主题
     `);
 }
 

@@ -28,3 +28,6 @@ pnpm-debug.log*
 # cache
 .eslintcache
 .stylelintcache
+web-react-lite-demos/scripts/ui-html/source/
+web-react-lite-demos/scripts/ui-html/target-dark/
+web-react-lite-demos/scripts/ui-html/target-light/
