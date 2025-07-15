@@ -5,8 +5,8 @@ const { ensureDir, readdir, readFile, writeFile } = require('fs-extra');
 const prettier = require('prettier');
 
 // 配置项
-const SVG_DIR = '../assets/icons'; // SVG源目录
-const COMPONENT_DIR = '../components/Icons'; // 组件输出目录
+const SVG_DIR = './assets/icons'; // SVG源目录
+const COMPONENT_DIR = './components/Icons'; // 组件输出目录
 
 // Prettier配置
 const PRETTIER_CONFIG = {
@@ -47,6 +47,8 @@ const convertSvgToComponent = async () => {
 
       // 获取组件名
       const componentName = toPascalCase(path.basename(file, '.svg'));
+
+      console.log(`🚀 Converting ${file} to ${componentName}...`);
 
       // 使用SVGR转换
       const jsCode = await transform(

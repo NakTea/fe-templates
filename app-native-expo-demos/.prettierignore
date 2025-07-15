@@ -3,8 +3,13 @@ tests/
 demo/
 .ice/
 coverage/
+.gitignore
+.prettierignore
 **/*-min.js
 **/*.min.js
+**/*.png
+**/*.svg
+**/*.ttf
 package-lock.json
 yarn.lock
 **/*.sh

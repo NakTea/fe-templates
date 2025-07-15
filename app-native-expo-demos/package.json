@@ -8,7 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "prettier": "prettier **/* --write",
+    "recovert-icon": "node ./scripts/icon-svg-rn.js ./assets/icons ./components/Icons  && node ./scripts/icon-rn-props.js ./components/Icons  && node ./scripts/icon-update-index-exports.js ./components/Icons --preview ./app/icon.tsx && prettier **/* --write"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -42,6 +44,7 @@
     "@babel/core": "^7.25.2",
     "@svgr/core": "^8.1.0",
     "@svgr/plugin-jsx": "^8.1.0",
+    "@svgr/plugin-prettier": "^8.1.0",
     "@svgr/plugin-svgo": "^8.1.0",
     "@types/react": "~19.0.10",
     "eslint": "^9.25.0",
