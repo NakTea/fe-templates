@@ -307,6 +307,37 @@ async function main() {
   console.log(`📁 输出目录: ${path.resolve(outputDir)}`);
   console.log('');
 
+  const COMPONENT_DIR = path.resolve(outputDir);
+  // 清除已有文件
+  try {
+    // 检查目录是否存在
+    try {
+      await fs.access(COMPONENT_DIR);
+    } catch {
+      console.error(`目录不存在: ${COMPONENT_DIR}`);
+      process.exit(1);
+    }
+
+    // 读取目录内容
+    const files = await fs.readdir(COMPONENT_DIR);
+
+    // 过滤出 .tsx 文件，并排除 index.tsx
+    const tsxFilesToDelete = files.filter((file) => file.endsWith('.tsx') && file !== 'index.tsx');
+
+    // 删除这些文件
+    for (const file of tsxFilesToDelete) {
+      const filePath = path.join(COMPONENT_DIR, file);
+      await fs.unlink(filePath);
+      console.log(`已删除文件: ${filePath}`);
+    }
+
+    if (tsxFilesToDelete.length === 0) {
+      console.log('没有需要删除的 .tsx 文件。');
+    }
+  } catch (err) {
+    console.error(`发生错误: ${err.message}`);
+  }
+
   await convertSvgDirectory(inputDir, outputDir);
 }
 

@@ -36,6 +36,39 @@ const formatCode = (code) => {
 
 // 核心转换函数
 const convertSvgToComponent = async () => {
+  // 确保目录存在 清除已有文件
+  if (!fs.existsSync(COMPONENT_DIR)) {
+    console.error(`目录不存在: ${COMPONENT_DIR}`);
+    process.exit(1);
+  }
+
+  // 读取目录内容
+  fs.readdir(COMPONENT_DIR, (err, files) => {
+    if (err) {
+      console.error(`无法读取目录: ${err}`);
+      return;
+    }
+
+    // 过滤出 .tsx 文件，并排除 index.tsx
+    const tsxFilesToDelete = files.filter((file) => file.endsWith('.tsx') && file !== 'index.tsx');
+
+    // 删除这些文件
+    tsxFilesToDelete.forEach((file) => {
+      const filePath = path.join(COMPONENT_DIR, file);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`删除文件失败: ${filePath}，错误: ${err}`);
+        } else {
+          console.log(`已删除文件: ${filePath}`);
+        }
+      });
+    });
+
+    if (tsxFilesToDelete.length === 0) {
+      console.log('没有需要删除的 .tsx 文件。');
+    }
+  });
+
   try {
     await ensureDir(COMPONENT_DIR);
     const files = await readdir(SVG_DIR);

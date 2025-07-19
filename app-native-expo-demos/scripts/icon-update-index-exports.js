@@ -1,4 +1,4 @@
-// node ./scripts/update-index-exports.js ./components/Icons --preview ./app/icon.tsx
+// node ./scripts/icon-update-index-exports.js ./components/Icons --preview ./app/icon.tsx
 const fs = require('fs');
 const path = require('path');
 
@@ -84,6 +84,18 @@ function generateExportStatements(iconFiles) {
   return iconFiles.map((file) => `export { default as ${file.componentName} } from '${file.importPath}';`).join('\n');
 }
 
+// 生成IconFont组件的switch cases
+function generateIconFontSwitchCases(iconFiles) {
+  return iconFiles
+    .map((file) => {
+      const { componentName } = file;
+      // 将组件名转换为小写的case名称
+      const caseName = componentName.charAt(0).toLowerCase() + componentName.slice(1);
+      return `    case '${caseName}':\n      return <${componentName} key="${caseName}" {...rest} />;`;
+    })
+    .join('\n');
+}
+
 // 生成图标预览文件内容
 function generatePreviewContent(iconFiles, iconsDirPath, previewFilePath) {
   // 计算相对导入路径
@@ -111,13 +123,15 @@ function generatePreviewContent(iconFiles, iconsDirPath, previewFilePath) {
         defaultSize = 100;
       }
 
-      return `        <Text style={styles.iconLabel}>${componentName}:</Text>
-        <${componentName} size={${defaultSize}} />`;
+      return `          <View style={styles.iconItem}>
+            <Text style={styles.iconLabel}>${componentName}:</Text>
+            <${componentName} size={${defaultSize}} />
+          </View>`;
     })
     .join('\n');
 
   const previewContent = `import { Stack } from 'expo-router';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text } from 'react-native';
 
 ${importStatements}
 
@@ -125,27 +139,54 @@ export default function IconPreviewScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Icon Preview' }} />
-      <ScrollView style={styles.container}>
-      <IconUri
-          size={16}
-          url="https://hojo-website-daily.oss-cn-shanghai.aliyuncs.com/hojo-static/demo/svg/attention.svg"
-        />
-      ${iconPreviews}
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.container}>
+          <View style={styles.iconItem}>
+            <Text style={styles.iconLabel}>IconUri:</Text>
+            <IconUri
+              size={24}
+              url="https://hojo-website-daily.oss-cn-shanghai.aliyuncs.com/hojo-static/demo/svg/attention.svg"
+            />
+          </View>
+${iconPreviews}
+        </View>
       </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  scrollContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
+  container: {
+    padding: 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 20,
+  },
+  iconItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+    padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
   iconLabel: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 8,
+    textAlign: 'center',
+    color: 'white',
   },
 });
 `;
@@ -175,7 +216,7 @@ function createPreviewFile(iconFiles, iconsDirPath, previewFilePath) {
   }
 }
 
-// 更新index.tsx文件中的导出区间
+// 更新index.tsx文件中的导出区间和IconFont组件
 function updateIndexFileExports(dirPath, iconFiles) {
   const indexPath = path.join(dirPath, 'index.tsx');
 
@@ -208,11 +249,34 @@ function updateIndexFileExports(dirPath, iconFiles) {
     // 生成新的导出语句
     const exportStatements = generateExportStatements(iconFiles);
 
+    // 生成IconFont组件的switch cases
+    const switchCases = generateIconFontSwitchCases(iconFiles);
+
     // 构建新内容：保持标记前的内容 + 标记 + 新导出 + 标记后的内容
     const beforeStartMarker = existingContent.substring(0, startIndex + EXPORT_START_MARKER.length);
     const afterEndMarker = existingContent.substring(endIndex);
 
-    const newContent = `${beforeStartMarker}\n${exportStatements}\n${afterEndMarker}`;
+    // 检查是否已经存在IconFont组件，如果存在则替换，否则添加
+    const iconFontRegex = /export const IconFont[\s\S]*?return null;\s*};/;
+    let newAfterEndMarker = afterEndMarker;
+
+    const iconFontComponent = `
+export const IconFont = ({ size = 16, width, height, color, name, ...rest }: IIconProps) => {
+  switch (name) {
+${switchCases}
+  }
+  return null;
+};`;
+
+    if (iconFontRegex.test(afterEndMarker)) {
+      // 替换现有的IconFont组件
+      newAfterEndMarker = afterEndMarker.replace(iconFontRegex, iconFontComponent.trim());
+    } else {
+      // 添加新的IconFont组件
+      newAfterEndMarker = afterEndMarker + iconFontComponent;
+    }
+
+    const newContent = `${beforeStartMarker}\n${exportStatements}\n${newAfterEndMarker}`;
 
     // 写入文件
     fs.writeFileSync(indexPath, newContent, 'utf8');
@@ -224,15 +288,42 @@ function updateIndexFileExports(dirPath, iconFiles) {
   }
 }
 
+// 生成所有图标组件的导入语句
+function generateImportStatements(iconFiles) {
+  const imports = iconFiles
+    .map((file) => {
+      return `import ${file.componentName} from '${file.importPath}';`;
+    })
+    .join('\n');
+
+  return imports;
+}
+
 // 创建新的index.tsx文件（如果不存在）
 function createIndexFile(dirPath, iconFiles) {
   const indexPath = path.join(dirPath, 'index.tsx');
 
-  const baseContent = `export interface IIconItemProps {
+  const importStatements = generateImportStatements(iconFiles);
+  const switchCases = generateIconFontSwitchCases(iconFiles);
+
+  const baseContent = `import React from 'react';
+
+${importStatements}
+
+export interface IIconItemProps {
   size?: number;
   color?: string | string[] | undefined;
   width?: number;
   height?: number;
+}
+
+export interface IIconProps {
+  size?: number;
+  width?: number;
+  height?: number;
+  color?: string | string[] | undefined;
+  name: string;
+  [key: string]: any;
 }
 
 export const getIconColor = (color: string | string[] | undefined, index: number, defaultColor: string) => {
@@ -250,6 +341,13 @@ export const getIconColor = (color: string | string[] | undefined, index: number
 ${EXPORT_START_MARKER}
 ${generateExportStatements(iconFiles)}
 ${EXPORT_END_MARKER}
+
+export const IconFont = ({ size = 16, width, height, color, name, ...rest }: IIconProps) => {
+  switch (name) {
+${switchCases}
+  }
+  return null;
+};
 `;
 
   try {
@@ -258,6 +356,107 @@ ${EXPORT_END_MARKER}
     return true;
   } catch (error) {
     console.error(`❌ Error creating index.tsx:`, error.message);
+    return false;
+  }
+}
+
+// 更新index.tsx文件中的导出区间和IconFont组件
+function updateIndexFileExports(dirPath, iconFiles) {
+  const indexPath = path.join(dirPath, 'index.tsx');
+
+  if (!fs.existsSync(indexPath)) {
+    console.error(`❌ index.tsx file does not exist: ${indexPath}`);
+    console.log('💡 Please create index.tsx first or run with --create flag');
+    return false;
+  }
+
+  try {
+    const existingContent = fs.readFileSync(indexPath, 'utf8');
+
+    const startIndex = existingContent.indexOf(EXPORT_START_MARKER);
+    const endIndex = existingContent.indexOf(EXPORT_END_MARKER);
+
+    if (startIndex === -1 || endIndex === -1) {
+      console.error(`❌ Export markers not found in index.tsx`);
+      console.log(`💡 Please add these markers to your index.tsx:`);
+      console.log(`   ${EXPORT_START_MARKER}`);
+      console.log(`   ${EXPORT_END_MARKER}`);
+      return false;
+    }
+
+    if (startIndex >= endIndex) {
+      console.error(`❌ Invalid marker positions in index.tsx`);
+      console.log(`💡 Start marker should come before end marker`);
+      return false;
+    }
+
+    // 生成新的导入语句
+    const importStatements = generateImportStatements(iconFiles);
+
+    // 生成新的导出语句
+    const exportStatements = generateExportStatements(iconFiles);
+
+    // 生成IconFont组件的switch cases
+    const switchCases = generateIconFontSwitchCases(iconFiles);
+
+    // 查找并替换导入语句区域
+    let newContent = existingContent;
+
+    // 查找现有的导入语句区域（从文件开始到第一个export或interface）
+    const importEndRegex = /(export\s+interface|export\s+const|export\s+{)/;
+    const importEndMatch = existingContent.match(importEndRegex);
+
+    if (importEndMatch) {
+      const importEndIndex = importEndMatch.index;
+      const beforeImports = existingContent.substring(0, 0);
+      const afterImports = existingContent.substring(importEndIndex);
+
+      // 保留React导入，添加新的图标导入
+      const reactImport = "import React from 'react';\nimport { SvgUri } from 'react-native-svg';\n\n";
+      newContent = `${reactImport}${importStatements}\n\n${afterImports}`;
+    } else {
+      // 如果找不到合适的位置，就在文件开头添加
+      const reactImport = existingContent.includes("import React from 'react';") ? '' : "import React from 'react';\n";
+      newContent = `${reactImport}${importStatements}\n\n${existingContent}`;
+    }
+
+    // 更新导出区域
+    const newStartIndex = newContent.indexOf(EXPORT_START_MARKER);
+    const newEndIndex = newContent.indexOf(EXPORT_END_MARKER);
+
+    if (newStartIndex !== -1 && newEndIndex !== -1) {
+      const beforeStartMarker = newContent.substring(0, newStartIndex + EXPORT_START_MARKER.length);
+      const afterEndMarker = newContent.substring(newEndIndex);
+
+      // 检查是否已经存在IconFont组件，如果存在则替换，否则添加
+      const iconFontRegex = /export const IconFont[\s\S]*?return null;\s*};/;
+      let newAfterEndMarker = afterEndMarker;
+
+      const iconFontComponent = `
+export const IconFont = ({ size = 16, width, height, color, name, ...rest }: IIconProps) => {
+  switch (name) {
+${switchCases}
+  }
+  return null;
+};`;
+
+      if (iconFontRegex.test(afterEndMarker)) {
+        // 替换现有的IconFont组件
+        newAfterEndMarker = afterEndMarker.replace(iconFontRegex, iconFontComponent.trim());
+      } else {
+        // 添加新的IconFont组件
+        newAfterEndMarker = afterEndMarker + iconFontComponent;
+      }
+
+      newContent = `${beforeStartMarker}\n${exportStatements}\n${newAfterEndMarker}`;
+    }
+
+    // 写入文件
+    fs.writeFileSync(indexPath, newContent, 'utf8');
+
+    return true;
+  } catch (error) {
+    console.error(`❌ Error updating index.tsx:`, error.message);
     return false;
   }
 }
@@ -371,13 +570,13 @@ function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.log('Usage: node update-index-exports.js <directory-path> [options]');
+    console.log('Usage: node icon-update-index-exports.js <directory-path> [options]');
     console.log('');
     console.log('Examples:');
-    console.log('  node update-index-exports.js ./src/components/icons');
-    console.log('  node update-index-exports.js ./src/components/icons --create');
-    console.log('  node update-index-exports.js ./src/components/icons --preview ./app/icon.tsx');
-    console.log('  node update-index-exports.js ./components/Icons --preview ./app/icon.tsx --create');
+    console.log('  node icon-update-index-exports.js ./src/components/icons');
+    console.log('  node icon-update-index-exports.js ./src/components/icons --create');
+    console.log('  node icon-update-index-exports.js ./src/components/icons --preview ./app/icon.tsx');
+    console.log('  node icon-update-index-exports.js ./components/Icons --preview ./app/icon.tsx --create');
     console.log('');
     console.log('Options:');
     console.log('  --create              Create index.tsx if it does not exist');
@@ -439,4 +638,5 @@ module.exports = {
   extractComponentNameFromContent,
   createPreviewFile,
   generatePreviewContent,
+  generateIconFontSwitchCases,
 };

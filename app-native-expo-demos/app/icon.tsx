@@ -1,71 +1,64 @@
 import { Stack } from 'expo-router';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text } from 'react-native';
 
 import IconUri, {
-  AlarmFill1,
-  Calendar,
-  CalendarBadgeClock,
-  Dashboard,
-  Extroversion,
-  IconWarningJingao,
-  IconWarningWeixian,
-  IconWarningZhuyi,
-  Logo,
-  Neuroticism,
-  Rain,
-  Trash,
-  Union,
+  MediaIqiyi
 } from '../components/Icons';
 
 export default function IconPreviewScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Icon Preview' }} />
-      <ScrollView style={styles.container}>
-        <IconUri
-          size={16}
-          url="https://hojo-website-daily.oss-cn-shanghai.aliyuncs.com/hojo-static/demo/svg/attention.svg"
-        />
-        <Text style={styles.iconLabel}>AlarmFill1:</Text>
-        <AlarmFill1 size={60} />
-        <Text style={styles.iconLabel}>Calendar:</Text>
-        <Calendar size={60} />
-        <Text style={styles.iconLabel}>CalendarBadgeClock:</Text>
-        <CalendarBadgeClock size={60} />
-        <Text style={styles.iconLabel}>Dashboard:</Text>
-        <Dashboard size={60} />
-        <Text style={styles.iconLabel}>Extroversion:</Text>
-        <Extroversion size={100} />
-        <Text style={styles.iconLabel}>IconWarningJingao:</Text>
-        <IconWarningJingao size={24} />
-        <Text style={styles.iconLabel}>IconWarningWeixian:</Text>
-        <IconWarningWeixian size={24} />
-        <Text style={styles.iconLabel}>IconWarningZhuyi:</Text>
-        <IconWarningZhuyi size={24} />
-        <Text style={styles.iconLabel}>Logo:</Text>
-        <Logo size={60} />
-        <Text style={styles.iconLabel}>Neuroticism:</Text>
-        <Neuroticism size={100} />
-        <Text style={styles.iconLabel}>Rain:</Text>
-        <Rain size={60} />
-        <Text style={styles.iconLabel}>Trash:</Text>
-        <Trash size={60} />
-        <Text style={styles.iconLabel}>Union:</Text>
-        <Union size={60} />
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.container}>
+          <View style={styles.iconItem}>
+            <Text style={styles.iconLabel}>IconUri:</Text>
+            <IconUri
+              size={24}
+              url="https://hojo-website-daily.oss-cn-shanghai.aliyuncs.com/hojo-static/demo/svg/attention.svg"
+            />
+          </View>
+          <View style={styles.iconItem}>
+            <Text style={styles.iconLabel}>MediaIqiyi:</Text>
+            <MediaIqiyi size={60} />
+          </View>
+        </View>
       </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  scrollContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
+  container: {
+    padding: 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 20,
+  },
+  iconItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+    padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
   iconLabel: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 8,
+    textAlign: 'center',
+    color: 'white',
   },
 });

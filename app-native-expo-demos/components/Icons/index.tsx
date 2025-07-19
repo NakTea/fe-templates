@@ -1,4 +1,7 @@
+import React from 'react';
 import { SvgUri } from 'react-native-svg';
+
+import MediaIqiyi from './MediaIqiyi';
 
 export interface IIconProps {
   name?: string;
@@ -18,17 +21,13 @@ const IconUri = ({ url = '', size = 16, width, height, color, name, ...rest }: I
 export default IconUri;
 
 // 导出所有图标组件开始
-export { default as AlarmFill1 } from './AlarmFill1';
-export { default as Calendar } from './Calendar';
-export { default as CalendarBadgeClock } from './CalendarBadgeClock';
-export { default as Dashboard } from './Dashboard';
-export { default as Extroversion } from './Extroversion';
-export { default as IconWarningJingao } from './IconWarningJingao';
-export { default as IconWarningWeixian } from './IconWarningWeixian';
-export { default as IconWarningZhuyi } from './IconWarningZhuyi';
-export { default as Logo } from './Logo';
-export { default as Neuroticism } from './Neuroticism';
-export { default as Rain } from './Rain';
-export { default as Trash } from './Trash';
-export { default as Union } from './Union';
+export { default as MediaIqiyi } from './MediaIqiyi';
 // 导出所有图标组件完毕
+
+export const IconFont = ({ size = 16, width, height, color, name, ...rest }: IIconProps) => {
+  switch (name) {
+    case 'mediaIqiyi':
+      return <MediaIqiyi key="mediaIqiyi" {...rest} />;
+  }
+  return null;
+};
