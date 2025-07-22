@@ -1,15 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import styles from './index.module.less';
 
 // 工具函数导入
-import {
-  getCanvasCoordinates,
-  drawDashedRect,
-  drawResizeHandles,
-  drawRectLabel,
-  drawReadOnlyLabel,
-  drawNodeBorder,
-} from './utils/canvasUtils';
+import { getCanvasCoordinates, drawDashedRect, drawResizeHandles, drawRectLabel } from './utils/canvasUtils';
 import {
   generateRectId,
   isPointInRect,
@@ -19,6 +12,7 @@ import {
   convertToExternalRects,
   calculateResizedRect,
   batchUpdateRectSelection,
+  findRectById,
 } from './utils/rectUtils';
 import {
   isNodeInside,
@@ -32,7 +26,6 @@ import {
   isNodeInSelectedList,
 } from './utils/nodeUtils';
 import { debounce } from './utils/debounce';
-import { styleConfig, getNodeStyle, getMarqueeStyle } from './utils';
 
 // 类型导入
 import { IElementNode, IMarqueeRectData, IMarqueeRect, IContextMenu, ISelectedNodeData } from './types';
@@ -77,6 +70,8 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
   const [hoveredNode, setHoveredNode] = useState<IElementNode | null>(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  // 当前高亮的节点（用于反显）
+  const [highlightedNodeKey, setHighlightedNodeKey] = useState<string | null>(null);
 
   // 圈选相关状态
   const [marqueeRects, setMarqueeRects] = useState<IMarqueeRect[]>([]);
@@ -90,12 +85,6 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
 
   // 性能优化：临时状态，用于拖动和调整大小时的实时预览
   const [tempRect, setTempRect] = useState<IMarqueeRect | null>(null);
-
-  // 新增：绘制时的预览矩形状态
-  const [previewRect, setPreviewRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-
-  // 新增：当前高亮的节点（用于反显）
-  const [highlightedNodeKey, setHighlightedNodeKey] = useState<string | null>(null);
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<IContextMenu>({
@@ -113,15 +102,15 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
   const isUpdatingRef = useRef(false);
   const animationFrameRef = useRef<number | null>(null);
 
-  // 使用 useMemo 缓存处理后的矩形数据
-  const processedRects = React.useMemo(() => {
+  // 使用 useMemo 缓存处理后的矩形数据，避免不必要的重新计算
+  const processedRects = useMemo(() => {
     if (tempRect) {
       return marqueeRects.map((rect) => (rect.id === tempRect.id ? tempRect : rect));
     }
     return marqueeRects;
   }, [marqueeRects, tempRect]);
 
-  // 初始化矩形数据
+  // 初始化矩形数据 - 优化版本
   useEffect(() => {
     if (initialMarqueeRects.length > 0) {
       const internalRects = convertToInternalRects(initialMarqueeRects);
@@ -142,7 +131,7 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         const externalRects = convertToExternalRects(rects);
         onMarqueeListChange?.(externalRects);
       }
-    }, 50),
+    }, 50), // 减少防抖时间，提高响应性
     [marqueeMode, onMarqueeListChange],
   );
 
@@ -153,15 +142,17 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
   // 优化的选择矩形函数
   const selectRectById = useCallback(
     (rectId: string | null) => {
-      if (selectedRectId === rectId) return;
+      if (selectedRectId === rectId) return; // 避免重复选择
 
       isUpdatingRef.current = true;
 
+      // 批量更新选中状态
       setMarqueeRects((prev) => batchUpdateRectSelection(prev, rectId));
       setSelectedRectId(rectId);
 
+      // 输出选中的矩形信息
       if (rectId) {
-        const selectedRect = marqueeRects.find((rect) => rect.id === rectId);
+        const selectedRect = findRectById(marqueeRects, rectId);
         if (selectedRect) {
           const rectData: IMarqueeRectData = {
             id: selectedRect.id,
@@ -183,6 +174,7 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         }
       }
 
+      // 延迟重置更新标志
       setTimeout(() => {
         isUpdatingRef.current = false;
       }, 100);
@@ -292,11 +284,12 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         }
       }, 0);
 
+      // 立即绘制一次，避免延迟
       requestAnimationFrame(() => drawOverlay());
     };
   }, [imageUrl]);
 
-  // 修改绘制覆盖层函数，正确显示节点状态
+  // 绘制覆盖层函数，添加节点高亮逻辑
   const drawOverlay = useCallback(() => {
     if (!overlayCanvasRef.current || !isImageLoaded) return;
 
@@ -307,59 +300,41 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (marqueeMode) {
-      // 圈选模式：绘制圈选矩形（保持不变）
-      processedRects.forEach((rect, index) => {
-        const style = getMarqueeStyle(rect.selected);
+      // 圈选模式绘制逻辑保持不变
+      const rectsToRender = tempRect
+        ? marqueeRects.map((rect) => (rect.id === tempRect.id ? tempRect : rect))
+        : marqueeRects;
 
-        // 绘制矩形填充
-        ctx.fillStyle = style.fillStyle;
+      rectsToRender.forEach((rect, index) => {
+        ctx.fillStyle = rect.selected ? 'rgba(24, 144, 255, 0.1)' : 'rgba(0, 123, 255, 0.05)';
         ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
 
-        // 绘制虚线边框
-        ctx.strokeStyle = style.strokeStyle;
-        ctx.lineWidth = style.lineWidth;
-        drawDashedRect(ctx, rect.x, rect.y, rect.width, rect.height, style.lineDash);
+        ctx.strokeStyle = rect.selected ? '#ff7875' : '#1890ff';
+        ctx.lineWidth = rect.selected ? 3 : 2;
 
-        // 只读模式下不显示调整大小的手柄
+        const dashArray = rect.selected ? [8, 4] : [5, 5];
+        drawDashedRect(ctx, rect.x, rect.y, rect.width, rect.height, dashArray);
+
         if (rect.selected && !readOnly) {
-          drawResizeHandles(ctx, rect.x, rect.y, rect.width, rect.height, style.strokeStyle);
+          drawResizeHandles(ctx, rect.x, rect.y, rect.width, rect.height, '#ff7875');
         }
 
-        // 绘制矩形序号标签
         const rectIndex = index + 1;
-        drawRectLabel(ctx, rect.x, rect.y, `#${rectIndex}`, style.labelColor);
+        const labelColor = rect.selected ? '#ff7875' : '#1890ff';
+        drawRectLabel(ctx, rect.x, rect.y, `#${rectIndex}`, labelColor);
 
-        // 只读模式标识
         if (readOnly && rect.selected) {
-          drawReadOnlyLabel(ctx, rect.x, rect.y, rect.width);
+          const readOnlyX = rect.x + rect.width - 30;
+          const readOnlyY = rect.y + 20;
+
+          ctx.fillStyle = '#ff7875';
+          ctx.fillRect(readOnlyX - 3, readOnlyY - 15, 28, 18);
+
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 10px Arial';
+          ctx.fillText('只读', readOnlyX, readOnlyY);
         }
       });
-
-      // 绘制预览矩形（正在绘制时）
-      if (previewRect && isDrawing) {
-        const { x, y, width, height } = previewRect;
-
-        // 绘制预览填充
-        ctx.fillStyle = 'rgba(0, 123, 255, 0.1)';
-        ctx.fillRect(x, y, width, height);
-
-        // 绘制预览边框
-        ctx.strokeStyle = '#007bff';
-        ctx.lineWidth = 2;
-        drawDashedRect(ctx, x, y, width, height, [3, 3]);
-
-        // 绘制预览标签
-        const nextIndex = processedRects.length + 1;
-        drawRectLabel(ctx, x, y, `#${nextIndex}`, '#007bff');
-
-        // 显示尺寸信息
-        const sizeText = `${Math.round(width)} × ${Math.round(height)}`;
-        ctx.fillStyle = 'rgba(0, 123, 255, 0.8)';
-        ctx.fillRect(x + width - 80, y + height - 20, 75, 16);
-        ctx.fillStyle = 'white';
-        ctx.font = '11px Arial';
-        ctx.fillText(sizeText, x + width - 75, y + height - 8);
-      }
     } else {
       // 节点选择模式：绘制节点边界
       allNodes.current?.forEach((node) => {
@@ -367,28 +342,54 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         const { x, y, width, height } = node?.rect;
 
         const area = calculateNodeArea(node);
+        const isSmallNode = area < 10000;
         const isInSelectedList = isNodeInSelectedList(selectedNodes, node.key);
-        const isActiveSelected = highlightedNodeKey === node.key; // 从列表中选中的活动状态
-        const isHovered = hoveredNode?.key === node.key;
-        const isCanvasSelected = selectedNode?.key === node.key;
+        const isHighlighted = highlightedNodeKey === node.key;
 
-        // 获取对应的样式
-        const style = getNodeStyle(isCanvasSelected, isHovered, isInSelectedList, isActiveSelected, area);
+        // 基础样式
+        ctx.strokeStyle = isSmallNode ? '#52c41a' : '#1890ff';
+        ctx.lineWidth = isSmallNode ? 2 : 1;
+        ctx.setLineDash(isSmallNode ? [3, 2] : [5, 3]);
 
-        // 绘制节点边框和填充
-        drawNodeBorder(ctx, x, y, width, height, style);
+        // 悬停效果
+        if (hoveredNode?.key === node.key) {
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.1)';
+          ctx.fillRect(x, y, width, height);
+        }
 
-        // 绘制节点标签
+        // 当前选中节点
+        if (selectedNode?.key === node.key) {
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+          ctx.fillRect(x, y, width, height);
+          ctx.strokeStyle = '#ff4d4f';
+          ctx.lineWidth = 3;
+        }
+
+        // 在选择列表中的节点
+        if (isInSelectedList) {
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.1)';
+          ctx.fillRect(x, y, width, height);
+          // ctx.strokeStyle = '#52c41a';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
+        }
+
+        // 从列表中选中的节点（高亮显示）
+        if (isHighlighted) {
+          ctx.fillStyle = 'rgba(255, 2555, 0, 0.2)';
+          ctx.fillRect(x, y, width, height);
+          ctx.strokeStyle = '#ff4d4f';
+          ctx.lineWidth = 4;
+          ctx.setLineDash([6, 2]);
+        }
+
+        ctx.strokeRect(x, y, width, height);
+        ctx.setLineDash([]);
+
+        // 绘制节点标签（仅对选择列表中的节点）
         if (isInSelectedList) {
           const nodeIndex = selectedNodes.findIndex((n) => n.key === node.key) + 1;
-          let labelColor = styleConfig.labelBackgroundNormalSelected; // 默认绿色
-
-          if (isActiveSelected) {
-            labelColor = styleConfig.labelBackgroundHighlight; // 活动选中红色
-          } else if (isCanvasSelected) {
-            labelColor = styleConfig.labelBackgroundSelected; // 画布选中蓝色
-          }
-
+          const labelColor = isHighlighted ? '#52c41a' : '#73c0de';
           drawRectLabel(ctx, x, y, `N${nodeIndex}`, labelColor);
         }
       });
@@ -398,36 +399,21 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
     hoveredNode,
     isImageLoaded,
     marqueeMode,
-    processedRects,
+    marqueeRects,
+    tempRect,
     readOnly,
     selectedNodes,
     highlightedNodeKey,
-    previewRect,
-    isDrawing,
   ]);
-
-  // 监听外部选中节点变化，更新高亮
-  useEffect(() => {
-    const selectedNodeFromList = selectedNodes.find((node) => node.selected);
-    const newHighlightKey = selectedNodeFromList ? selectedNodeFromList.key : null;
-
-    if (highlightedNodeKey !== newHighlightKey) {
-      setHighlightedNodeKey(newHighlightKey);
-
-      // 如果有节点从列表被选中，清除画布上的当前选中状态
-      if (newHighlightKey && selectedNode?.key !== newHighlightKey) {
-        setSelectedNode(null);
-      }
-    }
-  }, [selectedNodes, highlightedNodeKey, selectedNode]);
 
   // 优化的重绘逻辑
   useEffect(() => {
+    // 取消之前的动画帧
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    const needsAnimation = marqueeMode || hoveredNode || selectedNode || isDragging || isResizing || isDrawing;
+    const needsAnimation = marqueeMode || hoveredNode || selectedNode || isDragging || isResizing;
 
     if (needsAnimation) {
       const animate = () => {
@@ -438,6 +424,7 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
       };
       animationFrameRef.current = requestAnimationFrame(animate);
     } else {
+      // 静态渲染
       requestAnimationFrame(() => drawOverlay());
     }
 
@@ -447,9 +434,9 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         animationFrameRef.current = null;
       }
     };
-  }, [drawOverlay, marqueeMode, hoveredNode, selectedNode, isDragging, isResizing, isDrawing]);
+  }, [drawOverlay, marqueeMode, hoveredNode, selectedNode, isDragging, isResizing]);
 
-  // 修改节点点击处理逻辑 - 实现状态切换
+  // 鼠标事件处理 - 优化版本
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!overlayCanvasRef.current) return;
 
@@ -472,91 +459,40 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         selectRectById(null);
       }
     } else {
-      // 节点选择模式 - 支持状态切换
+      // 节点选择模式
       const clickedNode = getBestMatchNode(allNodes.current, coords.x, coords.y);
 
       if (clickedNode) {
-        // 检查是否按住 Ctrl/Cmd 键进行多选
-        const isMultiSelect = e.ctrlKey || e.metaKey;
+        setSelectedNode(clickedNode);
+        onSelect?.(clickedNode);
 
-        // 检查节点是否已在列表中
-        const isAlreadyInList = isNodeInSelectedList(selectedNodes, clickedNode.key);
-
-        if (isAlreadyInList) {
-          // 节点已在列表中 - 切换为活动选中状态
-
-          // 1. 将之前的活动选中节点恢复为普通选中状态
-          // 2. 将当前点击的节点设为活动选中状态
-          const updatedNodes = selectedNodes.map((node) => ({
-            ...node,
-            selected: node.key === clickedNode.key, // 只有当前点击的节点为选中状态
-          }));
-
+        // 如果节点不在选择列表中且不是只读模式，添加到列表
+        if (!readOnly && !isNodeInSelectedList(selectedNodes, clickedNode.key)) {
+          const nodeData = convertNodeToSelectedData(clickedNode);
+          const updatedNodes = batchUpdateNodeSelection([...selectedNodes, nodeData], nodeData.id);
           onSelectedNodesChange?.(updatedNodes);
-
-          // 输出当前活动选中的节点
-          const activeNode = updatedNodes.find((node) => node.selected);
-          if (activeNode) {
-            onNodeOutput?.(activeNode);
-          }
-
-          // 清除画布选中状态，设置高亮状态
-          setSelectedNode(null);
-          setHighlightedNodeKey(clickedNode.key);
-
-          console.log('Switched to active selected:', clickedNode.key);
+          onNodeOutput?.(nodeData);
         } else {
-          // 节点不在列表中 - 添加到列表
-          if (!readOnly) {
-            const nodeData = convertNodeToSelectedData(clickedNode);
-
-            let updatedNodes: ISelectedNodeData[];
-
-            if (isMultiSelect) {
-              // 多选模式：添加到列表，不改变其他节点的选中状态
-              updatedNodes = [...selectedNodes, { ...nodeData, selected: false }];
-              // 设置画布选中状态
-              setSelectedNode(clickedNode);
-              setHighlightedNodeKey(null);
-            } else {
-              // 单选模式：清除其他节点的选中状态，添加当前节点为活动选中
-              updatedNodes = [
-                ...selectedNodes.map((node) => ({ ...node, selected: false })),
-                { ...nodeData, selected: true },
-              ];
-              // 清除画布选中状态，设置高亮状态
-              setSelectedNode(null);
-              setHighlightedNodeKey(clickedNode.key);
-            }
-
+          // 如果节点已在列表中，选中它
+          const existingNode = findSelectedNodeById(selectedNodes, clickedNode.key);
+          if (existingNode) {
+            const updatedNodes = batchUpdateNodeSelection(selectedNodes, existingNode.id);
             onSelectedNodesChange?.(updatedNodes);
-            onNodeOutput?.(nodeData);
-            onSelect?.(clickedNode);
-
-            console.log('Added node to list:', nodeData);
-            console.log('Multi-select mode:', isMultiSelect);
+            onNodeOutput?.(existingNode);
           }
         }
 
-        console.log('Clicked node:', clickedNode);
+        console.log('Selected node:', clickedNode);
       } else {
-        // 点击空白区域
-        const isMultiSelect = e.ctrlKey || e.metaKey;
-
-        if (!isMultiSelect) {
-          // 非多选模式：清除所有选中状态
-          setSelectedNode(null);
-          setHighlightedNodeKey(null);
-          if (selectedNodes.length > 0) {
-            const updatedNodes = batchUpdateNodeSelection(selectedNodes, null);
-            onSelectedNodesChange?.(updatedNodes);
-          }
+        setSelectedNode(null);
+        // 取消所有节点选中
+        if (selectedNodes.length > 0) {
+          const updatedNodes = batchUpdateNodeSelection(selectedNodes, null);
+          onSelectedNodesChange?.(updatedNodes);
         }
-        // 多选模式下点击空白区域不清除选择
       }
     }
   };
-
   // 右键菜单处理
   const handleCanvasContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!marqueeMode) return;
@@ -625,15 +561,13 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
       }
     }
 
-    // 开始绘制新矩形
     if (marqueeRects.length < maxRectCount) {
       setIsDrawing(true);
       setStartPoint(coords);
-      setPreviewRect({ x: coords.x, y: coords.y, width: 0, height: 0 });
     }
   };
 
-  // 优化圈选模式鼠标移动 - 添加实时预览
+  // 圈选模式鼠标移动
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!marqueeMode || !overlayCanvasRef.current) return;
 
@@ -642,7 +576,6 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
     if (readOnly) return;
 
     if (isDragging && selectedRectId && tempRect) {
-      // 拖动矩形 - 只更新临时状态
       let newX = coords.x - dragOffset.x;
       let newY = coords.y - dragOffset.y;
 
@@ -651,19 +584,12 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
 
       setTempRect((prev) => (prev ? { ...prev, x: newX, y: newY } : null));
     } else if (isResizing && selectedRectId && resizeHandle && tempRect) {
-      // 调整矩形大小 - 只更新临时状态
       const updates = calculateResizedRect(tempRect, resizeHandle, coords.x, coords.y);
       const newRect = constrainRect({ ...tempRect, ...updates }, imageSize.width, imageSize.height);
       setTempRect(newRect);
     } else if (isDrawing && startPoint) {
-      // 绘制新矩形的实时预览
-      const x = Math.min(startPoint.x, coords.x);
-      const y = Math.min(startPoint.y, coords.y);
-      const width = Math.abs(coords.x - startPoint.x);
-      const height = Math.abs(coords.y - startPoint.y);
-
-      // 更新预览矩形状态
-      setPreviewRect({ x, y, width, height });
+      // 直接触发重绘，不需要额外的 drawOverlay 调用
+      // 因为 useEffect 中的动画循环会自动处理
     }
   };
 
@@ -678,23 +604,23 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
       setResizeHandle(null);
       setStartPoint(null);
       setTempRect(null);
-      setPreviewRect(null);
       return;
     }
 
     if (isDragging && selectedRectId && tempRect) {
-      // 拖动结束 - 更新实际状态
       setMarqueeRects((prev) => prev.map((rect) => (rect.id === selectedRectId ? tempRect : rect)));
       setTempRect(null);
     } else if (isResizing && selectedRectId && tempRect) {
-      // 调整大小结束 - 更新实际状态
       setMarqueeRects((prev) => prev.map((rect) => (rect.id === selectedRectId ? tempRect : rect)));
       setTempRect(null);
-    } else if (isDrawing && startPoint && previewRect) {
-      // 绘制新矩形完成
-      const { x, y, width, height } = previewRect;
+    } else if (isDrawing && startPoint) {
+      const coords = getCanvasCoordinates(e, overlayCanvasRef.current);
 
-      // 只有当矩形足够大时才创建
+      const x = Math.min(startPoint.x, coords.x);
+      const y = Math.min(startPoint.y, coords.y);
+      const width = Math.abs(coords.x - startPoint.x);
+      const height = Math.abs(coords.y - startPoint.y);
+
       if (width > 10 && height > 10) {
         const newRect: IMarqueeRect = {
           id: generateRectId(),
@@ -723,30 +649,14 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
           },
         };
         onMarqueeOutput?.(rectData);
-
-        console.log('Created new rectangle:', rectData);
       }
     }
 
-    // 重置所有操作状态
     setIsDrawing(false);
     setIsDragging(false);
     setIsResizing(false);
     setResizeHandle(null);
     setStartPoint(null);
-    setPreviewRect(null);
-  };
-
-  // 鼠标离开画布时清除预览
-  const handleMouseLeave = () => {
-    if (!marqueeMode) {
-      setHoveredNode(null);
-    } else {
-      // 清除绘制预览
-      if (isDrawing) {
-        setPreviewRect(null);
-      }
-    }
   };
 
   // 清除选中状态
@@ -767,6 +677,17 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
     return 'default';
   };
 
+  useEffect(() => {
+    const selectedNode = selectedNodes.find((node) => node.selected);
+    setHighlightedNodeKey(selectedNode ? selectedNode.key : null);
+  }, [selectedNodes]);
+
+  // 暴露选择矩形的方法给外部调用
+  useEffect(() => {
+    // 如果组件需要支持外部调用选择矩形的功能
+    // 可以通过 ref 或者其他方式暴露 selectRectById 方法
+  }, [selectRectById]);
+
   return (
     <div className={styles.canvasContainer} ref={containerRef}>
       <canvas
@@ -785,13 +706,17 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         onMouseMove={marqueeMode ? handleMouseMove : handleCanvasHover}
         onMouseDown={marqueeMode ? handleMouseDown : undefined}
         onMouseUp={marqueeMode ? handleMouseUp : undefined}
-        onMouseLeave={handleMouseLeave}
+        onMouseLeave={() => {
+          if (!marqueeMode) {
+            setHoveredNode(null);
+          }
+        }}
         style={{
           cursor: getCursorStyle(),
         }}
       />
 
-      {/* 右键菜单 */}
+      {/* 现有的右键菜单和只读模式水印保持不变 */}
       {contextMenu.visible && marqueeMode && (
         <div
           style={{
@@ -889,35 +814,14 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         </div>
       )}
 
-      {/* 模式指示器 */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          backgroundColor: marqueeMode ? styleConfig.marqueeSelectedColor : styleConfig.nodeInListColor,
-          color: styleConfig.labelTextColor,
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontWeight: 'bold',
-          zIndex: 100,
-          pointerEvents: 'none',
-          opacity: 0.9,
-        }}
-      >
-        {marqueeMode ? '📐 圈选模式' : '🎯 节点选择'}
-      </div>
-
-      {/* 只读模式水印 */}
-      {readOnly && (
+      {readOnly && marqueeMode && (
         <div
           style={{
             position: 'absolute',
             top: '10px',
             right: '10px',
-            backgroundColor: styleConfig.readOnlyBackgroundColor,
-            color: styleConfig.readOnlyTextColor,
+            backgroundColor: 'rgba(255, 120, 117, 0.9)',
+            color: 'white',
             padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '12px',
@@ -930,35 +834,14 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
         </div>
       )}
 
-      {/* 绘制提示信息 */}
-      {marqueeMode && isDrawing && previewRect && (
+      {/* 新增：节点选择模式提示 */}
+      {!marqueeMode && (
         <div
           style={{
             position: 'absolute',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0, 123, 255, 0.9)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            zIndex: 100,
-            pointerEvents: 'none',
-          }}
-        >
-          📐 正在绘制矩形: {Math.round(previewRect.width)} × {Math.round(previewRect.height)} px
-        </div>
-      )}
-
-      {/* 矩形数量限制提示 */}
-      {marqueeMode && marqueeRects.length >= maxRectCount && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50px',
+            top: '10px',
             left: '10px',
-            backgroundColor: 'rgba(255, 193, 7, 0.9)',
+            backgroundColor: 'rgba(82, 196, 26, 0.9)',
             color: 'white',
             padding: '4px 8px',
             borderRadius: '4px',
@@ -968,85 +851,7 @@ const ElementVisualizer: React.FC<IElementVisualizer> = ({
             pointerEvents: 'none',
           }}
         >
-          ⚠️ 已达到最大矩形数量 ({maxRectCount})
-        </div>
-      )}
-
-      {/* 节点选择统计信息 */}
-      {!marqueeMode && selectedNodes.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '10px',
-            backgroundColor: 'rgba(82, 196, 26, 0.9)',
-            color: 'white',
-            padding: '6px 10px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            zIndex: 100,
-            pointerEvents: 'none',
-          }}
-        >
-          🎯 已选择 {selectedNodes.length} 个节点
-        </div>
-      )}
-
-      {/* 操作提示 */}
-      {marqueeMode && !readOnly && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            right: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '11px',
-            lineHeight: '1.4',
-            zIndex: 100,
-            pointerEvents: 'none',
-            maxWidth: '200px',
-          }}
-        >
-          <div>
-            <strong>操作提示:</strong>
-          </div>
-          <div>• 拖拽创建矩形</div>
-          <div>• 点击选择矩形</div>
-          <div>• 拖拽移动矩形</div>
-          <div>• 拖拽角点调整大小</div>
-          <div>• 右键删除矩形</div>
-          <div>• ESC 取消选择</div>
-        </div>
-      )}
-
-      {/* 节点选择模式操作提示 */}
-      {!marqueeMode && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            right: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '11px',
-            lineHeight: '1.4',
-            zIndex: 100,
-            pointerEvents: 'none',
-            maxWidth: '200px',
-          }}
-        >
-          <div>
-            <strong>操作提示:</strong>
-          </div>
-          <div>• 点击节点选择</div>
-          <div>• 节点自动加入列表</div>
-          <div>• 点击列表项反选</div>
-          <div>• 选中状态互斥显示</div>
+          🎯 节点选择模式
         </div>
       )}
     </div>

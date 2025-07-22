@@ -1,7 +1,7 @@
 import React, { Fragment, useState, useCallback, useRef } from 'react';
 import ElementVisualizer from './ElementVisualizer';
 import mockData from './hierarchy.json';
-import { IMarqueeRectData, ISelectedNodeData } from './types';
+import { IMarqueeRectData, ISelectedNodeData } from './ElementVisualizer/types';
 
 // 定义模式枚举
 enum CanvasMode {
@@ -123,14 +123,13 @@ const ImageMarker: React.FC<IImageMarkerProps> = ({
     [marqueeRects, handleMarqueeListChange, handleMarqueeOutput],
   );
 
-  // 列表项点击处理（选中节点） - 实现状态切换
+  // 列表项点击处理（选中节点）
   const handleNodeListItemClick = useCallback(
     (nodeData: ISelectedNodeData) => {
       if (isUpdatingRef.current) return;
 
       isUpdatingRef.current = true;
 
-      // 将点击的节点设为活动选中，其他节点恢复为普通选中
       const updatedNodes = selectedNodes.map((node) => ({
         ...node,
         selected: node.id === nodeData.id,
@@ -168,7 +167,7 @@ const ImageMarker: React.FC<IImageMarkerProps> = ({
 
   return (
     <Fragment>
-      <div style={{ display: 'flex', height: '100%' }}>
+      <div style={{ display: 'flex', height: '100vh' }}>
         {/* 主画布区域 */}
         <div style={{ flex: 1 }}>
           <ElementVisualizer

@@ -116,6 +116,7 @@ export const batchUpdateRectSelection = (rects: IMarqueeRect[], selectedId: stri
     selected: rect.id === selectedId,
   }));
 };
+
 // 根据ID查找矩形
 export const findRectById = (rects: IMarqueeRect[], id: string): IMarqueeRect | null => {
   return rects.find((rect) => rect.id === id) || null;

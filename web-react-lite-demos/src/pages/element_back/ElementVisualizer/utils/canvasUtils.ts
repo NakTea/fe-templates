@@ -1,5 +1,3 @@
-import { styleConfig } from './index';
-
 // Canvas相关工具函数
 export const getCanvasCoordinates = (
   e: React.MouseEvent<HTMLCanvasElement>,
@@ -22,7 +20,7 @@ export const drawDashedRect = (
   y: number,
   width: number,
   height: number,
-  dashArray: number[] = styleConfig.defaultLineDash,
+  dashArray: number[] = [5, 5],
 ) => {
   ctx.setLineDash(dashArray);
   ctx.strokeRect(x, y, width, height);
@@ -36,7 +34,7 @@ export const drawResizeHandles = (
   y: number,
   width: number,
   height: number,
-  color: string = styleConfig.handleStrokeColor,
+  color: string = '#1890ff',
 ) => {
   const handles = [
     { x: x, y: y }, // 左上
@@ -47,11 +45,11 @@ export const drawResizeHandles = (
 
   handles.forEach((handle) => {
     ctx.beginPath();
-    ctx.arc(handle.x, handle.y, styleConfig.handleRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = styleConfig.handleFillColor;
+    ctx.arc(handle.x, handle.y, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = 'white';
     ctx.fill();
     ctx.strokeStyle = color;
-    ctx.lineWidth = styleConfig.handleLineWidth;
+    ctx.lineWidth = 2;
     ctx.setLineDash([]);
     ctx.stroke();
   });
@@ -63,7 +61,7 @@ export const drawRectLabel = (
   x: number,
   y: number,
   label: string,
-  backgroundColor: string = styleConfig.labelBackgroundDefault,
+  backgroundColor: string = '#1890ff',
 ) => {
   const labelX = x + 5;
   const labelY = y + 20;
@@ -73,48 +71,7 @@ export const drawRectLabel = (
   ctx.fillRect(labelX - 3, labelY - 15, 25, 18);
 
   // 绘制标签文字
-  ctx.fillStyle = styleConfig.labelTextColor;
-  ctx.font = styleConfig.labelFont;
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 12px Arial';
   ctx.fillText(label, labelX, labelY);
-};
-
-// 绘制只读标识
-export const drawReadOnlyLabel = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number) => {
-  const readOnlyX = x + width - 30;
-  const readOnlyY = y + 20;
-
-  ctx.fillStyle = styleConfig.readOnlyColor;
-  ctx.fillRect(readOnlyX - 3, readOnlyY - 15, 28, 18);
-
-  ctx.fillStyle = styleConfig.readOnlyTextColor;
-  ctx.font = styleConfig.labelSmallFont;
-  ctx.fillText('只读', readOnlyX, readOnlyY);
-};
-
-// 绘制节点边框
-export const drawNodeBorder = (
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  style: {
-    strokeStyle: string;
-    lineWidth: number;
-    lineDash: number[];
-    fillStyle?: string | null;
-  },
-) => {
-  // 绘制填充
-  if (style.fillStyle) {
-    ctx.fillStyle = style.fillStyle;
-    ctx.fillRect(x, y, width, height);
-  }
-
-  // 绘制边框
-  ctx.strokeStyle = style.strokeStyle;
-  ctx.lineWidth = style.lineWidth;
-  ctx.setLineDash(style.lineDash);
-  ctx.strokeRect(x, y, width, height);
-  ctx.setLineDash([]);
 };
