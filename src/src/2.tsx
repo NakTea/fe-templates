@@ -161,4 +161,117 @@ const BridgeToNativeNew: React.FC<BridgeToNativeProps> = (props: any) => {
 
       {/* 发送自定义消息 */}
       <View style={styles.section}>
-        <Text style={styles.dataText}>{cust
+        <Text style={styles.dataText}>{customMsg}</Text>
+        <TouchableOpacity style={styles.button} onPress={sendCustomMessage}>
+          <Text style={styles.buttonText}>发送自定义消息</Text>
+        </TouchableOpacity>
+      </View>
+
+      {error && <Text style={styles.error}>{error}</Text>}
+
+      {/* 调试信息 */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>调试信息</Text>
+        <Text style={styles.debugText}>RNConfigModule: {RNConfigModule ? '✅ 可用' : '❌ 不可用'}</Text>
+        <Text style={styles.debugText}>sendMsg: {sendMsg ? '✅ 可用' : '❌ 不可用'}</Text>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  section: {
+    backgroundColor: 'white',
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  dataContainer: {
+    backgroundColor: '#f8f8f8',
+    padding: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  dataText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: '#666',
+  },
+  messagesContainer: {
+    backgroundColor: '#f8f8f8',
+    padding: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    minHeight: 60,
+  },
+  messageText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 4,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 16,
+    backgroundColor: 'white',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  debugText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  error: {
+    fontSize: 14,
+    marginBottom: 4,
+    color: 'red',
+  },
+});
+
+export default BridgeToNativeNew;
+
+AppRegistry.registerComponent('BridgeToNativeNew', () => BridgeToNativeNew);
