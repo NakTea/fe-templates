@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>102单日降水概率_曲线图模板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* 核心样式定义: 遵循页面背景一致性规则 */
+      :root {
+        /* 颜色 */
+        --background: #000f2c;
+        --containerPrimary: #00000066;
+        /* 新增: 主要容器背景色 */
+        --textTitle: #ffffff;
+        --textPrimary: #ffffffcc;
+        --textSecondary: #ffffff99;
+        --dividerList: #ffffff19;
+        --dividerBp: #317af7;
+        --chart-border-color: #5ebffd;
+        --chart-background-color: var(--dividerBp);
+
+        /* 间距 Spacing */
+        --spaceElementsMin: 0px;
+        --spaceElementsXxxs: 2px;
+        --spaceElementsXxs: 4px;
+        --spaceElementsXs: 8px;
+        --spaceElementsS: 12px;
+        --spaceElementsM: 16px;
+        --spaceElementsL: 20px;
+        --spaceElementsXl: 24px;
+        --spaceCardPaddingUpdownS: 24px;
+        --spaceCardPaddingLeftRightS: 24px;
+        --spaceCardPaddingUpdownXs: 12px;
+        --spaceCardPaddingLeftRightXs: 16px;
+        --spaceCardPaddingXMs: 12px;
+        --spaceCardPaddingLeftRightXxs: 8px;
+        --spaceCardPaddingLeftRightXxxs: 4px;
+      }
+
+      body {
+        background-image: url('https://hojo-website-daily.oss-cn-shanghai.aliyuncs.com/hojo-design/system/car_bg.png');
+        background-color: var(--background);
+        background-size: 960px 540px;
+        background-position: center;
+        background-repeat: no-repeat;
+        font-family: 'HarmonyOS_Sans', 'HarmonyOS_Sans_SC', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0 120px;
+        color: white;
+      }
+
+      .weather-card {
+        width: 100%;
+        min-width: 228px;
+        max-width: 440px;
+        /* 更新: 使用containerPrimary作为背景色 */
+        background-color: var(--containerPrimary);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: var(--spaceCardPaddingUpdownS) var(--spaceCardPaddingLeftRightS);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+      }
+
+      /* 字体样式 */
+      .cnHeadlineXxsStrong {
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .cnHeadlineXsStrong {
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .cnBodyM {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.66;
+      }
+
+      .cnBodyS {
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.66;
+      }
+
+      /* 颜色和间距工具类 */
+      .text-color-title {
+        color: var(--textTitle);
+      }
+
+      .text-color-primary {
+        color: var(--textPrimary);
+      }
+
+      .margin-y-m {
+        margin-top: var(--spaceElementsM);
+        margin-bottom: var(--spaceElementsXxs);
+      }
+
+      .margin-bottom-xs {
+        margin-bottom: var(--spaceElementsXs);
+      }
+
+      .text-center {
+        text-align: center;
+      }
+
+      .chart-container {
+        flex-grow: 1;
+        position: relative;
+        height: 200px;
+        color: var(--textPrimary);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="weather-card">
+      <div style="margin-top: 0">
+        <p
+          class="cnBodyM text-color-primary"
+          style="margin-top: var(--spaceElementsXxs); margin-bottom: var(--spaceElementsXxs)">
+          北京市朝阳区
+        </p>
+        <h1
+          class="cnHeadlineXxsStrong text-color-title"
+          style="margin-top: var(--spaceElementsXxs); margin-bottom: var(--spaceElementsXxs)">
+          周四的降水概率：50%
+        </h1>
+      </div>
+
+      <div class="chart-container margin-y-m">
+        <canvas id="precipitationChart"></canvas>
+      </div>
+
+      <div style="margin-bottom: 0">
+        <p
+          class="cnBodyS text-color-primary text-center"
+          style="margin-top: var(--spaceElementsXs); margin-bottom: var(--spaceElementsXs)">
+          每日的降水概率往往比每小时的概率更高
+        </p>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('precipitationChart').getContext('2d');
+
+        const computedStyle = getComputedStyle(document.documentElement);
+        const textSecondaryColor = computedStyle.getPropertyValue('--textPrimary').trim();
+        const dividerListColor = computedStyle.getPropertyValue('--dividerList').trim();
+        const chartBorderColor = computedStyle.getPropertyValue('--chart-border-color').trim();
+        const chartBackgroundColor = computedStyle.getPropertyValue('--chart-background-color').trim();
+
+        const chartData = {
+          labels: ['上午12时', '上午6时', '下午12时', '下午6时'],
+          datasets: [
+            {
+              label: '降水概率',
+              data: [5, 8, 12, 20],
+              borderColor: chartBorderColor,
+              backgroundColor: chartBackgroundColor,
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.4,
+              fill: true,
+            },
+          ],
+        };
+
+        const chartOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              enabled: false,
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                stepSize: 20,
+                color: textSecondaryColor,
+                font: { size: 12 },
+                callback: function (value) {
+                  return value + '%';
+                },
+                padding: 8,
+              },
+              grid: {
+                color: dividerListColor,
+                borderDash: [5, 5],
+                drawBorder: false,
+              },
+            },
+            x: {
+              ticks: {
+                color: textSecondaryColor,
+                font: { size: 12 },
+                padding: 10,
+              },
+              grid: {
+                display: false,
+              },
+            },
+          },
+        };
+
+        new Chart(ctx, {
+          type: 'line',
+          data: chartData,
+          options: chartOptions,
+        });
+      });
+    </script>
+  </body>
+</html>
