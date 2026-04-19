@@ -17,4 +17,41 @@ final class JaHomeStrings implements HomeStrings {
 
   @override
   String get themeTooltipToDark => 'ダークモードに切り替え';
+
+  @override
+  String get shellRoutesPageTitle => 'ルート';
+
+  @override
+  String get tabRoutesLabel => 'ルート';
+
+  @override
+  String get tabDemoLabel => 'デモ';
+
+  @override
+  String get routeDartLearning => 'Dart 学習';
+
+  @override
+  String get routeDartLearningSubtitle => 'Dart コードの実行と確認';
+
+  @override
+  String get routeBusinessCard => '名刺';
+
+  @override
+  String get routeBusinessCardSubtitle => 'Flutter レイアウトの練習';
+
+  @override
+  String get dartLearningPageTitle => 'Dart 学習';
+
+  @override
+  String get dartLearningRunSample => 'サンプルを実行';
+
+  @override
+  String get dartLearningOutputHeading => '出力';
+
+  @override
+  String get businessCardPageTitle => '名刺';
+
+  @override
+  String get businessCardPlaceholder =>
+      '空のキャンバスです。Row・Column・Card などで名刺レイアウトを試してください。';
 }

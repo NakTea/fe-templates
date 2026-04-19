@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:study_app/l10n/app_localizations.dart';
-import 'package:study_app/main.dart';
+import 'package:study_app/pages/demo_home_page.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
