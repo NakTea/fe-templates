@@ -38,6 +38,23 @@ class _DartLearningPageState extends State<DartLearningPage> {
     final h = l10n.home;
     final theme = Theme.of(context);
 
+    // 1. 显式声明类型
+    String name = "Flutter";
+    int age = 25;
+    double height = 1.75;
+    bool isStudent = true;
+
+    // 2. 类型推断 (推荐)
+    var city = "Shanghai"; // 编译器自动推断它是 String
+
+    // 3. 常量 (不可修改)
+    final birthDate = "2000-01-01"; // 运行时确定
+    const pi = 3.14159; // 编译时确定
+
+    debugPrint(
+      "name: $name, age: $age, height: $height, isStudent: $isStudent, city: $city, birthDate: $birthDate, pi: $pi",
+    );
+
     return Scaffold(
       appBar: AppBar(title: Text(h.dartLearningPageTitle)),
       body: SafeArea(
