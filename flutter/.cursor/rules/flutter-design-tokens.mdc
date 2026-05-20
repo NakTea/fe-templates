@@ -1,0 +1,35 @@
+---
+description: Flutter 主题与设计令牌（SystemTokens / SystemPalette）使用规范
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+# 主题与设计令牌
+
+## 应用主题
+
+根 `MaterialApp` 使用 `AppTheme.systemLight()` / `AppTheme.systemDark()`，通过 `themeMode` 切换。勿在业务层硬编码 `#RRGGBB` 或 `Colors.xxx` 替代设计色。
+
+## 读取令牌
+
+UI 层优先用扩展：
+
+```dart
+final t = context.systemTokens!;
+// 颜色 t.palette.* | 圆角 t.radii.* | 间距 t.spacing.* | 字号 t.typography.*
+```
+
+- `context.systemLightTokens` 与 `systemTokens` 等价（兼容旧名）
+- Material 组件可依赖 `Theme.of(context).colorScheme` / `textTheme`（已在 `app_theme.dart` 映射）
+
+## 禁止
+
+- 魔法数字间距/圆角：用 `t.spacing.*`、`t.radii.*`
+- 绕过 `palette` 写死明暗色：颜色随 `themeMode` 变，统一走 `t.palette`
+- 修改令牌值：改 `lib/theme/system_palette.dart`、`system_light_layout.dart`、`system_light_typography.dart` 或 `app_theme.dart`，勿在页面 copy 一份
+
+## 图标尺寸
+
+图标颜色用 `t.palette.iconPrimary`；尺寸用 `t.measures.sizeIcon*`。
+
+详细对照见 `document/system-light-theme.md`；实现任务可读 skill `flutter-design-tokens`。

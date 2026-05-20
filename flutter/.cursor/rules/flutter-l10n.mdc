@@ -1,0 +1,34 @@
+---
+description: Flutter 多语言（AppLocalizations / contracts）使用规范
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+# 多语言
+
+## 读取
+
+```dart
+final l10n = AppLocalizations.of(context)!;
+Text(l10n.home.pageTitle);
+// 或 final h = l10n.home;
+```
+
+`MaterialApp` 须配置 `localizationsDelegates`、`supportedLocales`（见 `lib/main.dart`）。
+
+## 新增文案（四步）
+
+1. `lib/l10n/contracts/<模块>.dart` — 抽象类增加 `String get xxx`
+2. `lib/l10n/app/en|zh|ja/<模块>.dart` — 各语言实现
+3. 新模块：在 `app_localizations.dart` 增加字段、import、`_forLocale` 分支
+4. 新语言：扩展 `supportedLocales` 并补全所有 contract 实现
+
+## 禁止
+
+- 用户可见字符串硬编码在 `lib/pages/`、`lib/widgets/`（调试日志除外）
+- 使用 `.arb` / `flutter gen-l10n`（本项目为手写 contract + 实现类）
+- 只改一种语言文件
+
+## 语言切换
+
+用户选择语言经 `LocalePreferences` 持久化；`locale` 由 `MyApp` 的 `_localeOverride` 控制。详细流程见 skill `flutter-l10n`。
